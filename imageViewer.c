@@ -185,29 +185,6 @@ int PPMDataWrite(char ppmVersionNum, FILE *outputFile) {
 }
 
 
-// vertex shader
-char* vertext_shader_src =
-"attribute vec4 Position;\n"
-"attribute vec4 SourceColor;\n"
-"uniform vec2 Scale;\n"
-"uniform vec2 Translation;\n"
-"uniform float Rotation;\n"
-"uniform vec2 Shear;\n"
-"\n"
-"varying vec4 DestinationColor;\n"    // output use varying
-"void main(void) {\n"
-"   DestinationColor = SourceColor;\n"
-"   gl_Position = Position*ScaleMatrix*TranslationMatrix*RotationMatrix*ShearMatrix;\n"
-"}\n";
-
-
-// GLFW
-char* fragment_shader_src =
-"varying vec4 DestinationColor;\n"
-"\n"
-"void main(void) {\n"
-"gl_FragColor = DestinationColor;\n"
-"}\n";
 
 static void error_callback(int error, const char* description) {
 	fprintf(stderr, "Error: %s", description);
@@ -222,7 +199,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 typedef struct Vertex {
 	float position[2];
 	float TexCoord[2];
-} Vertext;
+} Vertex;
 
 Vertex Vertexes[] = {
 	{ { 1, -1, 0 }, {0.99999, 0} },
@@ -236,13 +213,6 @@ const GLubyte Indices[] = {
 	2, 3, 0
 };
 
-/**
-* The vertex shader for the applciation, this is where almost all the
-* action happens in reguards to transformations of the image. We simply
-* pass values for Scale, Translation, Shear, and Rotation into here and
-* the shader performs the appropriate matrix operations to transform the
-* displayed underlying geometry.
-*/
 char* vertex_shader_src =
 "attribute vec2 Position;\n"
 "attribute vec2 TexCoordIn;\n"
@@ -462,10 +432,10 @@ int main(int argc, char *argv[]) {
 	PPMRead(fileName);
 
 	GLFWwindow* window;
-	GLuint program_id, vertex_shader, fragment_shader, vertex_buffer, position, translation_location;
-	GLuint scale_location, rotation_location, shear_location
+	GLuint program_id, vertex_shader, fragment_shader, position, translation_location;
+	GLuint scale_location, rotation_location, shear_location''
 	GLuint texcoord_slot;
-	GLuint index_buffer;
+	GLuint index_buffer, vertex_buffer;
 	GLuint tex;
 
 	glfwSetErrorCallback(error_callback);
@@ -507,16 +477,77 @@ int main(int argc, char *argv[]) {
 	glEnableVertexAttribArray(position_location);
 	glEnableVertexAttribArray(texcoord_location);
 
+	// mapping the c side vertex data to an internal OpenGl representation
 	glGenBuffers(1, &vertex_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertexes), Vertexes, GL_STATIC_DRAW);
 
 	glGenBuffers(1, &index_buffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
+
+
+	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(fragment_shader, 1, &fragment)
 
 	int bufferWidth, bufferHeight;
 	glfwGetFramebufferSize(window, &bufferWidth, &bufferHeight);
 
-	
+	PPMimage image = PPMRead(fileName);
+	width = image.width;
+	height = image.height;
+	data = image.data;
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, widht, height, 0, GL_RGB, GL_FLOAT, data);
+
+	glVertexAttribPointer(position,
+		3,
+		GL_FLOAT,
+		GL_FALSE,
+		sizeof(Vertex),
+		0);
+
+	glVertexAttribPointer(texcoord_location,
+		2,
+		GL_FLOAT,
+		GL_FALSE,
+		sizeof(Vertex),
+		(GLvoid*)(sizeof(float) * 7));
+
+
+	// Repeat
+	while (!glfwWindowShouldClose(window)) {
+
+		// Tween values
+		tween(Scale, scaleTo, 2);
+		tween(Translation, translationTo, 2);
+		tween(Shear, shearTo, 2);
+		tween(&Rotation, &RotationTo, 1);
+
+		// Send updated values to the shader
+		glUniform2f(scale_slot, Scale[0], Scale[1]);
+		glUniform2f(translation_slot, Translation[0], Translation[1]);
+		glUniform2f(shear_slot, Shear[0], Shear[1]);
+		glUniform1f(rotation_slot, Rotation);
+
+		// Clear the screen
+		glClearColor(0, 0.0, 0.0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glViewport(0, 0, bufferWidth, bufferHeight);
+
+		// Draw everything
+		glDrawElements(GL_TRIANGLES,
+			sizeof(Indices) / sizeof(GLubyte),
+			GL_UNSIGNED_BYTE, 0);
+
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	glfwDestroyWindow(window);
+	glfwTerminate();
+	exit(EXIT_SUCCESS);
 }
