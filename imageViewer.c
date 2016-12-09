@@ -1,8 +1,13 @@
+#include <GLES2/gl2.h>
 #include <GLFW/glfw3.h>
 #define GLFW_INCLUDE_ES2 1
+#define GFLW_DLL 1
+
+#include "../deps/linmath.h"
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 // create a stuct that represents a single pixel, same as what we did in class
 typedef struct PPMRGBpixel {
@@ -182,83 +187,336 @@ int PPMDataWrite(char ppmVersionNum, FILE *outputFile) {
 
 // vertex shader
 char* vertext_shader_src =
-  "attribute vec4 Position;\n"
-  "attribute vec4 SourceColor;\n"
-  "uniform vec2 Scale;\n"
-  "uniform vec2 Translation;\n"
-  "uniform float Rotation;\n"
-  "uniform vec2 Shear;\n"
-  "\n"
-  "varying vec4 DestinationColor;\n"    // output use varying
-  "void main(void) {\n"
-  "   DestinationColor = SourceColor;\n"
-  "   gl_Position = Position*ScaleMatrix*TranslationMatrix*RotationMatrix*ShearMatrix;\n"
-  "}\n";
+"attribute vec4 Position;\n"
+"attribute vec4 SourceColor;\n"
+"uniform vec2 Scale;\n"
+"uniform vec2 Translation;\n"
+"uniform float Rotation;\n"
+"uniform vec2 Shear;\n"
+"\n"
+"varying vec4 DestinationColor;\n"    // output use varying
+"void main(void) {\n"
+"   DestinationColor = SourceColor;\n"
+"   gl_Position = Position*ScaleMatrix*TranslationMatrix*RotationMatrix*ShearMatrix;\n"
+"}\n";
 
 
 // GLFW
 char* fragment_shader_src =
-  "varying vec4 DestinationColor;\n"
-  "\n"
-  "void main(void) {\n"
-  "gl_FragColor = DestinationColor;\n"
-  "}\n";
+"varying vec4 DestinationColor;\n"
+"\n"
+"void main(void) {\n"
+"gl_FragColor = DestinationColor;\n"
+"}\n";
 
+static void error_callback(int error, const char* description) {
+	fprintf(stderr, "Error: %s", description);
+}
+
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+		glfwSetWindowShouldClose(window, GLFW_TRUE);
+	}
+}
 
 typedef struct Vertex {
-  float position[3];
-  float color[4];
+	float position[2];
+	float TexCoord[2];
 } Vertext;
 
-Vertex Vertices[] = {
-  {{1, -1, 0}, {}},
-  {{1, 1, 0},},
-  {{-1, 1, 0},},
-  {{-1, -1, 0},}
+Vertex Vertexes[] = {
+	{ { 1, -1, 0 }, {0.99999, 0} },
+	{ { 1, 1, 0 }, {0.99999 , 0.99999}},
+	{ { -1, 1, 0 }, {0, 0.99999}},
+	{ { -1, -1, 0 }, {0, 0}}
+};
+
+const GLubyte Indices[] = {
+	0, 1, 2,
+	2, 3, 0
+};
+
+/**
+* The vertex shader for the applciation, this is where almost all the
+* action happens in reguards to transformations of the image. We simply
+* pass values for Scale, Translation, Shear, and Rotation into here and
+* the shader performs the appropriate matrix operations to transform the
+* displayed underlying geometry.
+*/
+char* vertex_shader_src =
+"attribute vec2 Position;\n"
+"attribute vec2 TexCoordIn;\n"
+"uniform vec2 Scale;\n"
+"uniform vec2 Translation;"
+"uniform vec2 Shear;\n"
+"uniform float Rotation;\n"
+"varying vec2 TexCoordOut;\n"
+"mat4 RotationMatrix = mat4( cos(Rotation), -sin(Rotation), 0.0, 0.0,\n"
+"                            sin(Rotation),  cos(Rotation), 0.0, 0.0,\n"
+"                            0.0,            0.0,           1.0, 0.0,\n"
+"                            0.0,            0.0,           0.0, 1.0 );\n"
+"\n"
+"mat4 TranslationMatrix = mat4(1.0, 0.0, 0.0, Translation.x,\n"
+"                              0.0, 1.0, 0.0, Translation.y,\n"
+"                              0.0, 0.0, 1.0, 0.0,\n"
+"                              0.0, 0.0, 0.0, 1.0 );\n"
+"\n"
+"mat4 ScaleMatrix = mat4(Scale.x, 0.0,     0.0, 0.0,\n"
+"                        0.0,     Scale.y, 0.0, 0.0,\n"
+"                        0.0,     0.0,     1.0, 0.0,\n"
+"                        0.0,     0.0,     0.0, 1.0 );\n"
+"\n"
+"mat4 ShearMatrix = mat4(1.0,     Shear.x, 0.0, 0.0,\n"
+"                        Shear.y, 1.0,     0.0, 0.0,\n"
+"                        0.0,     0.0,     1.0, 0.0,\n"
+"                        0.0,     0.0,     0.0, 1.0 );\n"
+"\n"
+"void main(void) {\n"
+"    gl_Position = Position*ScaleMatrix*ShearMatrix*RotationMatrix*TranslationMatrix;\n"
+"    TexCoordOut = TexCoordIn;\n"
+"}";
+
+
+char* fragment_shader_src =
+"varying vec2 TexCoordOut;\n"
+"uniform sampler2D Texture;\n"
+"\n"
+"void main(void) {\n"
+"    gl_FragColor = texture2D(Texture, DestinationTexcoord);\n"
+"}";
+
+
+GLuint simple_shader(GLint shader_type, char* shader_src) {
+	GLint compile_success = 0;
+
+	GLuint shader_id = glCreateShader(shader_type);
+
+	glShaderSource(shader_id, 1, &shader_src, 0);
+
+	prinf("compiling shader...");
+
+	glCompileShader(shader_id);
+
+	glGetShaderiv(shader_id, GL_COMPILE_STATUS, &compile_success);
+
+	// If it failed print an error
+	if (compile_success == GL_FALSE) {
+		GLchar message[256];
+		glGetShaderInfoLog(shader_id, sizeof(message), 0, &message[0]);
+		printf("glCompileShader Error: %s\n", message);
+		exit(1);
+	}
+
+	return shader_id;
 }
 
-GLubyte indices[] = {
-  0, 1, 2,
-  2, 3, 0
+
+int simple_program() {
+
+	GLint link_success = 0;
+
+	GLuint program_id = glCreateProgram();
+	// Compile the shaders
+	GLuint vertex_shader = simple_shader(GL_VERTEX_SHADER, vertex_shader_src);
+	GLuint fragment_shader = simple_shader(GL_FRAGMENT_SHADER, fragment_shader_src);
+
+	glAttachShader(program_id, vertex_shader);
+	glAttachShader(program_id, fragment_shader);
+
+	glLinkProgram(program_id);
+
+	glGetProgramiv(program_id, GL_LINK_STATUS, &link_success);
+
+	if (link_success == GL_FALSE) {
+		GLchar message[256];
+		glGetProgramInfoLog(program_id, sizeof(message), 0, &message[0]);
+		printf("glLinkProgram Error: %s\n", message);
+		exit(1);
+	}
+
+	return program_id;
 }
 
-// compile our shader
-GLuint simple_shader(GLint shader_type, char* shader_src){
-  GLint compile_success = 0;
-
-  int shader_id = glCreateShader(shader_type);
-  glShaderSource(shader_id, 1, &shader_source, 0);
-
-  glCompileShader(shader_id);
-  glGetShaderiv(shader_id, GL_COMPILE_STATUS, &compile_success);
-
-  // print out error message if failed
-  if (compile_success == GL_FALSE){
-    GLchar message[256];
-    glGetShaderInfoLog(shader_id, sizeof(message), 0, &message[0]);
-    printf("glCompileShadeError: %s\n", message);
-    exit(1);
-  }
-
-  return shader_id;
+static void error_callback(int error, const char* description) {
+	fprintf(stderr, "Error: %s\n", description);
 }
 
-int simple_program(){
-  GLint link_success = 0;
-  GLuint program_id = glCreateProgram();
-  GLuint vertex_shader = simple_shader(GL_VERTEX_SHADER, vertext_shader_src);
-  GLuint fragment_shader = simple_shader(GL_FRAGMENT_SHADER, fragment_shader_src);
-  glAttachShader(program_id, vertex_shader);
-  glAttachShader(program_id, fragment_shader);
-  glLinkProgram(program_id);
-  glLinkProgram(program_id, GL_LINK_STATUS, &link_success);
 
-  // print out error message if link failed
-  if (link_success == GL_FALSE){
-    GLchar message[256];
-    glGetProgramInfoLog(program_id, sizeof(message), 0, &message[0]);
-    printf("glLinkProgramError: %s\n", message);
-    exit(1);
-  }
-  return program_id;
+float scaleTo = { 1.0, 1.0 };
+float Scale[] = { 1.0, 1.0 };
+float shearTo[] = { 0.0, 0.0 };
+float Shear[] = { 0.0, 0.0 };
+float translationTo[] = { 0.0, 0.0 };
+float Translation[] = { 0, 0 };
+float rotationTo = 0;
+float Rotation = 0;
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if (action == GLFW_PRESS) {
+		// scale
+		// scale the image up
+		if (key == GLFW_KEY_UP) {
+			scaleTo[0] *= 2;
+			scaleTo[1] *= 2;
+		}
+		// scale the image down
+		else if (key == GLFW_KEY_DOWN) {
+			scaleTo[0] /= 2;
+			scaleTo[1] /= 2;
+			
+		}
+		// scale the x up
+		else if (key == GLFW_KEY_D) {
+			scaleTo[0] *= 2;
+		}
+		// scale the x down
+		else if (key == GLFW_KEY_A) {
+			scaleTo[0] /= 2;
+		}
+		// scale the y up
+		else if (key == GLFW_KEY_W) {
+			scaleTo[1] *= 2;
+		}
+		// scale the y down
+		else if (key == GLFW_KEY_S) {
+			scaleTo[1] /= 2;
+		}
+	
+		// translation
+		// translate the x up 
+		else if (key == GLFW_KEY_L) {
+			translationTo[0] += 1;
+		}
+		// translate the x down
+		else if (key == GLFW_KEY_J) {
+			translationTo[0] -= 1;
+		}
+		// translate the y up
+		else if (key == GLFW_KEY_K) {
+			translationTo[1] += 1;
+		}
+		// translate the y down;
+		else if (key == GLFW_KEY_I) {
+			translationTo[1] -= 1;
+		}
+
+		// shear
+		// shear the x up
+		else if (key == GLFW_KEY_M) {
+			shearTo[0] += 1;
+		}
+		// shear the x down
+		else if (key == GLFW_KEY_N) {
+			shearTo[0] -= 1;
+		}
+		// shear the y up
+		else if (key == GLFW_KEY_Y) {
+			shearTo[1] += 1;
+		}
+		// shear the y down
+		else if (key == GLFW_KEY_U) {
+			shearTo[1] -= 1;
+		}
+
+		// rotation
+		// counterclockwise rotation
+		else if (key == GLFW_KEY_C) {
+			RotationTo += 0.1;
+		}
+		// clockwise rotation
+		else if (key == GLFW_KEY_Z) {
+			RotationTo -= 0.1;
+		}
+
+
+		// reset all values
+		else if (key == GLFW_KEY_R){
+			scaleTo[0] = 1;
+			scaleTo[1] = 1;
+			translationTo[0] = 0;
+			translationTo[1] = 0;
+			shearTo[0] = 0;
+			shearTo[1] = 0;
+			rotationTo = 0;
+		}
+
+		// close the window
+		else if (key == GLFW_KEY_ESCAPE) {
+			glfwWindowShouldClose(window, 1);
+		}
+
+	}
+}
+
+
+
+int main(int argc, char *argv[]) {
+	// check the number of input arguments
+	if (argc != 2) {
+		fprintf(stderr, "Error: Wrong format\n");
+		return 1;
+	}
+
+	char *fileName = argv[1];
+	PPMRead(fileName);
+
+	GLFWwindow* window;
+	GLuint program_id, vertex_shader, fragment_shader, vertex_buffer, position, translation_location;
+	GLuint scale_location, rotation_location, shear_location
+	GLuint texcoord_slot;
+	GLuint index_buffer;
+	GLuint tex;
+
+	glfwSetErrorCallback(error_callback);
+
+	if (!glfwInit())
+		return -1;
+
+	glfwDefaultWindowHints();
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+
+	// Create and open a window named 'Project 5!!!'
+	window = glfwCreateWindow(640, 480, "Project 5!!!", NULL, NULL);
+
+	if (!window) {
+		glfwTerminate();
+		exit(1);
+	}
+
+	glfwSetKeyCallback(window, key_callback);
+	glfwMakeContextCurrent(window);
+
+	program_id = simple_program();
+
+	glUseProgram(program_id);
+
+	position = glGetAttribLocation(program_id, "Position");
+	assert(position != -1);
+	texcoord_location = glGetAttribLocation(program_id, "TexCoordIn");
+	assert(texcoord_location != -1);
+	scale_location = glGetUniformLocation(program_id, "Scale");
+	assert(scale_location != -1);
+	translation_location = glGetUniformLocation(program_id, "Translation");
+	assert(translation_location != -1);
+	rotation_location = glGetUniformLocation(program_id, "Rotation");
+	assert(roration_location != -1);
+	shear_location = glGetUniformLocation(program_id, "Shear");
+	assert(shear_location != -1);
+	glEnableVertexAttribArray(position_location);
+	glEnableVertexAttribArray(texcoord_location);
+
+	glGenBuffers(1, &vertex_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertexes), Vertexes, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &index_buffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
+
+	int bufferWidth, bufferHeight;
+	glfwGetFramebufferSize(window, &bufferWidth, &bufferHeight);
+
+	
 }
