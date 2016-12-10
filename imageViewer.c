@@ -213,7 +213,7 @@ Vertex Vertexes[] = {
 
 char* vertex_shader_src =
 "uniform mat4 MVP;\n"
-"attribute vec2 Position;\n"
+"attribute vec2 vPos;\n"
 "attribute vec2 TexCoordIn;\n"
 "varying vec2 TexCoordOut;\n"
 "\n"
@@ -430,7 +430,7 @@ int main(int argc, char *argv[]) {
 	mvp_location = glGetUniformLocation(program_id, "MVP");
 	assert(mvp_location != -1);
 	
-	vpos_location = glGetAttribLocation(program_id, "Position");
+	vpos_location = glGetAttribLocation(program_id, "vPos");
 	assert(vpos_location != -1);
 
 	texcoord_location = glGetAttribLocation(program_id, "TexCoordIn");
@@ -505,14 +505,26 @@ int main(int argc, char *argv[]) {
 		glViewport(0, 0, bufferWidth, bufferHeight);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+
 		mat4x4_identity(m);
+
+		// scale the matrix
+		m[0][0] = m[0][0] * scaleTo[0];
+		m[1][1] = m[1][1] * scaleTo[1];
 		
-		// do the scale, shear, translation and rotation
-		mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
+		// shear the matrix
+		m[0][1] = shearTo[0];
+		m[1][0] = shearTo[1];
+		
+
+		// translate the matrix
+		mat4x4_translate(t, translationTo[0], translationTo[1], 0);
+
+		// rotate the matrix
 		mat4x4_rotate_Z(m, m, rotationTo);
 
 
-
+		mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
 		mat4x4_mul(mvp, p, m);
 
 		
