@@ -232,30 +232,6 @@ char* fragment_shader_src =
 "}";
 
 
-GLuint simple_shader(GLint shader_type, char* shader_src) {
-	GLint compile_success = 0;
-
-	GLuint shader_id = glCreateShader(shader_type);
-
-	glShaderSource(shader_id, 1, &shader_src, 0);
-
-	prinf("compiling shader...");
-
-	glCompileShader(shader_id);
-
-	glGetShaderiv(shader_id, GL_COMPILE_STATUS, &compile_success);
-
-	// If it failed print an error
-	if (compile_success == GL_FALSE) {
-		GLchar message[256];
-		glGetShaderInfoLog(shader_id, sizeof(message), 0, &message[0]);
-		printf("glCompileShader Error: %s\n", message);
-		exit(1);
-	}
-
-	return shader_id;
-}
-
 
 int simple_program() {
 
@@ -447,7 +423,7 @@ int main(int argc, char *argv[]) {
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1);
 
-	program_id = simple_program();
+	program_id = glCreateProgram();
 
 	glUseProgram(program_id);
 
@@ -521,6 +497,29 @@ int main(int argc, char *argv[]) {
 		int bufferWidth, bufferHeight;
 		glfwGetFramebufferSize(window, &bufferWidth, &bufferHeight);
 
+		float ratio;
+		mat4x4 m, p, mvp;
+
+		ratio = bufferWidth / (float)bufferHeight;
+
+		glViewport(0, 0, bufferWidth, bufferHeight);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		mat4x4_identity(m);
+		
+		// do the scale, shear, translation and rotation
+		mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
+		mat4x4_rotate_Z(m, m, rotationTo);
+
+
+
+		mat4x4_mul(mvp, p, m);
+
+		
+		
+		glUseProgram(program);
+		glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*)mvp);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
