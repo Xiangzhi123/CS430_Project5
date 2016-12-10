@@ -202,47 +202,23 @@ typedef struct Vertex {
 } Vertex;
 
 Vertex Vertexes[] = {
-	{ { 1, -1, 0 }, {0.99999, 0} },
-	{ { 1, 1, 0 }, {0.99999 , 0.99999}},
-	{ { -1, 1, 0 }, {0, 0.99999}},
-	{ { -1, -1, 0 }, {0, 0}}
+	{ { 1, -1}, {0.99999, 0} },
+	{ { 1, 1}, {0.99999 , 0.99999}},
+	{ { -1, 1}, {0, 0.99999}},
+	{ { -1, -1}, {0, 0}},
+	{{1, -1}, {0.99999, 0.99999}},
+	{{-1, 1}, {0 0}}
 };
 
-const GLubyte Indices[] = {
-	0, 1, 2,
-	2, 3, 0
-};
 
 char* vertex_shader_src =
+"uniform mat4 MVP;\n"
 "attribute vec2 Position;\n"
 "attribute vec2 TexCoordIn;\n"
-"uniform vec2 Scale;\n"
-"uniform vec2 Translation;"
-"uniform vec2 Shear;\n"
-"uniform float Rotation;\n"
 "varying vec2 TexCoordOut;\n"
-"mat4 RotationMatrix = mat4( cos(Rotation), -sin(Rotation), 0.0, 0.0,\n"
-"                            sin(Rotation),  cos(Rotation), 0.0, 0.0,\n"
-"                            0.0,            0.0,           1.0, 0.0,\n"
-"                            0.0,            0.0,           0.0, 1.0 );\n"
-"\n"
-"mat4 TranslationMatrix = mat4(1.0, 0.0, 0.0, Translation.x,\n"
-"                              0.0, 1.0, 0.0, Translation.y,\n"
-"                              0.0, 0.0, 1.0, 0.0,\n"
-"                              0.0, 0.0, 0.0, 1.0 );\n"
-"\n"
-"mat4 ScaleMatrix = mat4(Scale.x, 0.0,     0.0, 0.0,\n"
-"                        0.0,     Scale.y, 0.0, 0.0,\n"
-"                        0.0,     0.0,     1.0, 0.0,\n"
-"                        0.0,     0.0,     0.0, 1.0 );\n"
-"\n"
-"mat4 ShearMatrix = mat4(1.0,     Shear.x, 0.0, 0.0,\n"
-"                        Shear.y, 1.0,     0.0, 0.0,\n"
-"                        0.0,     0.0,     1.0, 0.0,\n"
-"                        0.0,     0.0,     0.0, 1.0 );\n"
 "\n"
 "void main(void) {\n"
-"    gl_Position = Position*ScaleMatrix*ShearMatrix*RotationMatrix*TranslationMatrix;\n"
+"    gl_Position = Position* vec4(vPos, 0.0, 1.0);\n"
 "    TexCoordOut = TexCoordIn;\n"
 "}";
 
@@ -313,13 +289,9 @@ static void error_callback(int error, const char* description) {
 
 
 float scaleTo = { 1.0, 1.0 };
-float Scale[] = { 1.0, 1.0 };
 float shearTo[] = { 0.0, 0.0 };
-float Shear[] = { 0.0, 0.0 };
 float translationTo[] = { 0.0, 0.0 };
-float Translation[] = { 0, 0 };
 float rotationTo = 0;
-float Rotation = 0;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -331,77 +303,76 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			scaleTo[1] *= 2;
 		}
 		// scale the image down
-		else if (key == GLFW_KEY_DOWN) {
+		if (key == GLFW_KEY_DOWN) {
 			scaleTo[0] /= 2;
-			scaleTo[1] /= 2;
-			
+			scaleTo[1] /= 2;	
 		}
 		// scale the x up
-		else if (key == GLFW_KEY_D) {
+		if (key == GLFW_KEY_D) {
 			scaleTo[0] *= 2;
 		}
 		// scale the x down
-		else if (key == GLFW_KEY_A) {
+		if (key == GLFW_KEY_A) {
 			scaleTo[0] /= 2;
 		}
 		// scale the y up
-		else if (key == GLFW_KEY_W) {
+		if (key == GLFW_KEY_W) {
 			scaleTo[1] *= 2;
 		}
 		// scale the y down
-		else if (key == GLFW_KEY_S) {
+		if (key == GLFW_KEY_S) {
 			scaleTo[1] /= 2;
 		}
 	
 		// translation
 		// translate the x up 
-		else if (key == GLFW_KEY_L) {
+		if (key == GLFW_KEY_L) {
 			translationTo[0] += 1;
 		}
 		// translate the x down
-		else if (key == GLFW_KEY_J) {
+		if (key == GLFW_KEY_J) {
 			translationTo[0] -= 1;
 		}
 		// translate the y up
-		else if (key == GLFW_KEY_K) {
+		if (key == GLFW_KEY_K) {
 			translationTo[1] += 1;
 		}
 		// translate the y down;
-		else if (key == GLFW_KEY_I) {
+		if (key == GLFW_KEY_I) {
 			translationTo[1] -= 1;
 		}
 
 		// shear
 		// shear the x up
-		else if (key == GLFW_KEY_M) {
+		if (key == GLFW_KEY_M) {
 			shearTo[0] += 1;
 		}
 		// shear the x down
-		else if (key == GLFW_KEY_N) {
+		if (key == GLFW_KEY_N) {
 			shearTo[0] -= 1;
 		}
 		// shear the y up
-		else if (key == GLFW_KEY_Y) {
+		if (key == GLFW_KEY_Y) {
 			shearTo[1] += 1;
 		}
 		// shear the y down
-		else if (key == GLFW_KEY_U) {
+		if (key == GLFW_KEY_U) {
 			shearTo[1] -= 1;
 		}
 
 		// rotation
 		// counterclockwise rotation
-		else if (key == GLFW_KEY_C) {
-			RotationTo += 0.1;
+		if (key == GLFW_KEY_C) {
+			RotationTo += 0.5;
 		}
 		// clockwise rotation
-		else if (key == GLFW_KEY_Z) {
-			RotationTo -= 0.1;
+		if (key == GLFW_KEY_Z) {
+			RotationTo -= 0.5;
 		}
 
 
 		// reset all values
-		else if (key == GLFW_KEY_R){
+		if (key == GLFW_KEY_R){
 			scaleTo[0] = 1;
 			scaleTo[1] = 1;
 			translationTo[0] = 0;
@@ -412,10 +383,29 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		}
 
 		// close the window
-		else if (key == GLFW_KEY_ESCAPE) {
+		if (key == GLFW_KEY_ESCAPE) {
 			glfwWindowShouldClose(window, 1);
 		}
 
+	}
+}
+
+void glCompileShaderOrDie(GLuint shader) {
+	GLint compiled;
+	glCompileShader(shader);
+	glGetShaderiv(shader,
+		GL_COMPILE_STATUS,
+		&compiled);
+	if (!compiled) {
+		GLint infoLen = 0;
+		glGetShaderiv(shader,
+			GL_INFO_LOG_LENGTH,
+			&infoLen);
+		char* info = malloc(infoLen + 1);
+		GLint done;
+		glGetShaderInfoLog(shader, infoLen, &done, info);
+		printf("Unable to compile shader: %s\n", info);
+		exit(1);
 	}
 }
 
@@ -432,10 +422,9 @@ int main(int argc, char *argv[]) {
 	PPMRead(fileName);
 
 	GLFWwindow* window;
-	GLuint program_id, vertex_shader, fragment_shader, position, translation_location;
-	GLuint scale_location, rotation_location, shear_location''
-	GLuint texcoord_slot;
-	GLuint index_buffer, vertex_buffer;
+	GLuint program_id, vertex_shader, fragment_shader;
+	GLuint vertex_buffer;
+	GLint mvp_location, vpos_location, texcoord_location, texture_location;
 
 	glfwSetErrorCallback(error_callback);
 
@@ -456,24 +445,28 @@ int main(int argc, char *argv[]) {
 
 	glfwSetKeyCallback(window, key_callback);
 	glfwMakeContextCurrent(window);
+	glfwSwapInterval(1);
 
 	program_id = simple_program();
 
 	glUseProgram(program_id);
 
-	position = glGetAttribLocation(program_id, "Position");
-	assert(position != -1);
+	mvp_location = glGetUniformLocation(program_id, "MVP");
+	assert(mvp_location != -1);
+	
+	vpos_location = glGetAttribLocation(program_id, "Position");
+	assert(vpos_location != -1);
+
 	texcoord_location = glGetAttribLocation(program_id, "TexCoordIn");
 	assert(texcoord_location != -1);
-	scale_location = glGetUniformLocation(program_id, "Scale");
-	assert(scale_location != -1);
-	translation_location = glGetUniformLocation(program_id, "Translation");
-	assert(translation_location != -1);
-	rotation_location = glGetUniformLocation(program_id, "Rotation");
-	assert(roration_location != -1);
-	shear_location = glGetUniformLocation(program_id, "Shear");
-	assert(shear_location != -1);
-	glEnableVertexAttribArray(position_location);
+
+	texture_location = glGetUniformLocation(program_id, "Texture");
+	assert(texture_location != -1);
+
+
+
+
+	glEnableVertexAttribArray(vpos_location);
 	glEnableVertexAttribArray(texcoord_location);
 
 	// mapping the c side vertex data to an internal OpenGl representation
@@ -481,12 +474,18 @@ int main(int argc, char *argv[]) {
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertexes), Vertexes, GL_STATIC_DRAW);
 
-	glGenBuffers(1, &index_buffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
-
 
 	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(fragment_shader, 1, &fragment)
+	glShaderSource(vertex_shader, 1, &vertex_shader_src, NULL);
+	glCompileShaderOrDie(vertex_shader);
+
+	fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragment_shader, 1, &fragment_shader_src, NULL);
+	glCompileShaderOrDie(fragment_shader);
+
+	glAttachShader(program_id, vertex_shader);
+	glAttachShader(program_id, fragment_shader);
+	glLinkProgram(program_id);
 
 	glVertexAttribPointer(position,
 		2,
@@ -522,27 +521,6 @@ int main(int argc, char *argv[]) {
 		int bufferWidth, bufferHeight;
 		glfwGetFramebufferSize(window, &bufferWidth, &bufferHeight);
 
-		Scale[0] = ;
-		Scale[1] = ;
-		Translation[0] = ;
-		Translation[1] = ;
-		Shear[0] = ;
-		Shear[1] = ;
-		Rotation += rotationTo;
-
-		// update the value 
-		glUniform2f(scale_location, Scale[0], Scale[1]);
-		glUniform2f(translation_location, Translation[0], Translation[1]);
-		glUniform2f(shear_location, Shear[0], Shear[1]);
-		glUniform1f(rotation_location, Rotation);
-
-		glViewport(0, 0, bufferWidth, bufferHeight);
-		glClearColor(0, 0.0, 0.0, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		glDrawElements(GL_TRIANGLES,
-			sizeof(Indices) / sizeof(GLubyte),
-			GL_UNSIGNED_BYTE, 0);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
