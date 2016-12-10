@@ -232,33 +232,6 @@ char* fragment_shader_src =
 "}";
 
 
-
-int simple_program() {
-
-	GLint link_success = 0;
-
-	GLuint program_id = glCreateProgram();
-	// Compile the shaders
-	GLuint vertex_shader = simple_shader(GL_VERTEX_SHADER, vertex_shader_src);
-	GLuint fragment_shader = simple_shader(GL_FRAGMENT_SHADER, fragment_shader_src);
-
-	glAttachShader(program_id, vertex_shader);
-	glAttachShader(program_id, fragment_shader);
-
-	glLinkProgram(program_id);
-
-	glGetProgramiv(program_id, GL_LINK_STATUS, &link_success);
-
-	if (link_success == GL_FALSE) {
-		GLchar message[256];
-		glGetProgramInfoLog(program_id, sizeof(message), 0, &message[0]);
-		printf("glLinkProgram Error: %s\n", message);
-		exit(1);
-	}
-
-	return program_id;
-}
-
 static void error_callback(int error, const char* description) {
 	fprintf(stderr, "Error: %s\n", description);
 }
