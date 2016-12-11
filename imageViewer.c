@@ -426,7 +426,7 @@ int main(int argc, char *argv[]) {
 	glAttachShader(program_id, fragment_shader);
 	glLinkProgram(program_id);
 
-	glVertexAttribPointer(position,
+	glVertexAttribPointer(vpos_location,
 		2,
 		GL_FLOAT,
 		GL_FALSE,
@@ -481,7 +481,7 @@ int main(int argc, char *argv[]) {
 		
 
 		// translate the matrix
-		mat4x4_translate(t, translationTo[0], translationTo[1], 0);
+		mat4x4_translate(m, translationTo[0], translationTo[1], 0);
 
 		// rotate the matrix
 		mat4x4_rotate_Z(m, m, rotationTo);
@@ -492,7 +492,7 @@ int main(int argc, char *argv[]) {
 
 		
 		
-		glUseProgram(program);
+		glUseProgram(program_id);
 		glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*)mvp);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
