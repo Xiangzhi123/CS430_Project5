@@ -1,9 +1,9 @@
-#include <GLES2/gl2.h>
 #include <GLFW/glfw3.h>
+#include <OpenGL/gl.h>
 #define GLFW_INCLUDE_ES2 1
 #define GFLW_DLL 1
 
-#include "../deps/linmath.h"
+#include "linmath.h"
 
 #include <stdio.h>
 #include <stdlib.h>
