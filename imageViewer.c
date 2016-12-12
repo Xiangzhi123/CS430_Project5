@@ -171,7 +171,7 @@ int PPMDataWrite(char ppmVersionNum, FILE *outputFile) {
 		for (i = 0; i < buffer->height; i++) {
 			for (j = 0; j < buffer->width; j++) {
 				// similar thing as we did in reading body data for P3, but we use fprintf here to write data.
-				fprintf(outputFile, "%d %d %d ", buffer->data[i*buffer->width*3+j*3], buffer->data[i*buffer->width+j*3+1], buffer->data[i*buffer->width*3+2]);
+				fprintf(outputFile, "%d %d %d ", buffer->data[i*buffer->width*3+j*3], buffer->data[i*buffer->width*3+j*3+1], buffer->data[i*buffer->width*3+j*3+2]);
 			}
 			fprintf(outputFile, "\n");
 		}
@@ -198,7 +198,7 @@ Vertex Vertexes[] = {
 	{ { -1, 1}, {0, 0.99999}},
 	{ { -1, -1}, {0, 0}},
 	{{1, -1}, {0.99999, 0.99999}},
-	{{-1, 1}, {0 0}}
+	{{-1, 1}, {0 0}},
 };
 
 
