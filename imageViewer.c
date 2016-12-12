@@ -391,21 +391,6 @@ int main(int argc, char *argv[]) {
 
 	glUseProgram(program_id);
 
-	mvp_location = glGetUniformLocation(program_id, "MVP");
-	assert(mvp_location != -1);
-	
-	vpos_location = glGetAttribLocation(program_id, "vPos");
-	assert(vpos_location != -1);
-
-	texcoord_location = glGetAttribLocation(program_id, "TexCoordIn");
-	assert(texcoord_location != -1);
-
-	texture_location = glGetUniformLocation(program_id, "Texture");
-	assert(texture_location != -1);
-
-
-
-
 	glEnableVertexAttribArray(vpos_location);
 	glEnableVertexAttribArray(texcoord_location);
 
@@ -426,6 +411,18 @@ int main(int argc, char *argv[]) {
 	glAttachShader(program_id, vertex_shader);
 	glAttachShader(program_id, fragment_shader);
 	glLinkProgram(program_id);
+	
+	mvp_location = glGetUniformLocation(program_id, "MVP");
+	assert(mvp_location != -1);
+	
+	vpos_location = glGetAttribLocation(program_id, "vPos");
+	assert(vpos_location != -1);
+
+	texcoord_location = glGetAttribLocation(program_id, "TexCoordIn");
+	assert(texcoord_location != -1);
+
+	texture_location = glGetUniformLocation(program_id, "Texture");
+	assert(texture_location != -1);
 
 	glVertexAttribPointer(vpos_location,
 		2,
