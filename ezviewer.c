@@ -392,9 +392,7 @@ int main(int argc, char *argv[]) {
 	program_id = glCreateProgram();
 
 	glUseProgram(program_id);
-
-	glEnableVertexAttribArray(vpos_location);
-	glEnableVertexAttribArray(texcoord_location);
+	
 
 	// mapping the c side vertex data to an internal OpenGl representation
 	glGenBuffers(1, &vertex_buffer);
@@ -413,6 +411,7 @@ int main(int argc, char *argv[]) {
 	glAttachShader(program_id, vertex_shader);
 	glAttachShader(program_id, fragment_shader);
 	glLinkProgram(program_id);
+
 	
 	mvp_location = glGetUniformLocation(program_id, "MVP");
 	assert(mvp_location != -1);
@@ -425,6 +424,9 @@ int main(int argc, char *argv[]) {
 
 	texture_location = glGetUniformLocation(program_id, "Texture");
 	assert(texture_location != -1);
+	
+	glEnableVertexAttribArray(vpos_location);
+	glEnableVertexAttribArray(texcoord_location);
 
 	glVertexAttribPointer(vpos_location,
 		2,
