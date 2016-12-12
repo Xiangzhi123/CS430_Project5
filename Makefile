@@ -1,2 +1,2 @@
 all:
-	cl /MD /I. *.lib imageViewer.c
+	cl /MD /I. *.lib ezview.c

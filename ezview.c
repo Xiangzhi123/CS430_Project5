@@ -114,7 +114,7 @@ PPMimage PPMRead(char *inputFilename) {
 		for (i = 0; i<buffer->height; i++) {
 			for (j = 0; j<buffer->width; j++) {
 				PPMRGBpixel *pixel = (PPMRGBpixel*)malloc(sizeof(PPMRGBpixel));
-				fscanf(fh, "%d %d %d", &pixel->r, &pixel->g, &pixel->b);
+				fscanf(fh, "%hhd %hhd %hhd", &pixel->r, &pixel->g, &pixel->b);
 				buffer->data[i*buffer->width * 3 + j * 3] = pixel->r;
 				buffer->data[i*buffer->width * 3 + j * 3 + 1] = pixel->g;
 				buffer->data[i*buffer->width * 3 + j * 3 + 2] = pixel->b;
@@ -190,17 +190,17 @@ int PPMDataWrite(char ppmVersionNum, FILE *outputFile) {
 
 
 typedef struct Vertex {
-	float position[2];
+	float Position[2];
 	float TexCoord[2];
 } Vertex;
 
 Vertex Vertexes[] = {
-	{ { 1, -1}, {0.99999, 0} },
-	{ { 1, 1}, {0.99999 , 0.99999}},
-	{ { -1, 1}, {0, 0.99999}},
-	{ { -1, -1}, {0, 0}},
-	{{1, -1}, {0.99999, 0.99999}},
-	{{-1, 1}, {0, 0}}
+	{ { -1, 1 },{ 0, 0 } },
+	{ { 1, 1 },{ 0.99999, 0 } },
+	{ { -1, -1 },{ 0, 0.99999 } },
+	{ { 1, 1 },{ 0.99999, 0 } },
+	{ { 1, -1 },{ 0.99999, 0.99999 } },
+	{ { -1, -1 },{ 0, 0.99999 } }
 };
 
 
@@ -235,7 +235,7 @@ float shearTo[2] = { 0.0, 0.0 };
 float translationTo[2] = { 0.0, 0.0 };
 float rotationTo = 0;
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (action == GLFW_PRESS) {
 		// scale
@@ -276,11 +276,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			translationTo[0] -= 1;
 		}
 		// translate the y up
-		if (key == GLFW_KEY_K) {
+		if (key == GLFW_KEY_I) {
 			translationTo[1] += 1;
 		}
 		// translate the y down;
-		if (key == GLFW_KEY_I) {
+		if (key == GLFW_KEY_K) {
 			translationTo[1] -= 1;
 		}
 
@@ -392,8 +392,6 @@ int main(int argc, char *argv[]) {
 	glfwSwapInterval(1);
 
 	program_id = glCreateProgram();
-
-	glUseProgram(program_id);
 	
 
 	// mapping the c side vertex data to an internal OpenGl representation
@@ -446,15 +444,13 @@ int main(int argc, char *argv[]) {
 
 
 	GLuint texID;
-	PPMimage image = PPMRead(fileName);
 	glGenTextures(1, &texID);
 	glBindTexture(GL_TEXTURE_2D, texID);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.width, image.height, 0, GL_RGB, GL_UNSIGNED_BYTE, image.data);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, buffer->width, buffer->height, 0, GL_RGB, GL_UNSIGNED_BYTE, buffer->data);
 
-	
 
 
 	while (!glfwWindowShouldClose(window)) {
@@ -498,7 +494,7 @@ int main(int argc, char *argv[]) {
 		
 		glUseProgram(program_id);
 		glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*)mvp);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
