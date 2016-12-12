@@ -1,5 +1,5 @@
 #include <GLFW/glfw3.h>
-#include <OpenGL/gl.h>
+#include <GLES2/gl2.h>
 #define GLFW_INCLUDE_ES2 1
 #define GFLW_DLL 1
 
