@@ -462,7 +462,7 @@ int main(int argc, char *argv[]) {
 		glfwGetFramebufferSize(window, &bufferWidth, &bufferHeight);
 
 		float ratio;
-		mat4x4 s, sh, t, r, p, ssh, ssht, sshtr, mvp;
+		mat4x4 s, sh, t, r, p, ssh, ssht, mvp;
 
 		ratio = bufferWidth / (float)bufferHeight;
 
@@ -492,7 +492,7 @@ int main(int argc, char *argv[]) {
 		mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
 		mat4x4_mul(ssh, s, sh);
 		mat4x4_mul(ssht, ssh, t);
-		mat4x4_mul(sshtr, ssht, r);
+		mat4x4_mul(mvp, ssht, r);
 
 		
 		
