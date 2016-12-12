@@ -374,6 +374,8 @@ int main(int argc, char *argv[]) {
 		return -1;
 
 	glfwDefaultWindowHints();
+	glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
@@ -460,34 +462,37 @@ int main(int argc, char *argv[]) {
 		glfwGetFramebufferSize(window, &bufferWidth, &bufferHeight);
 
 		float ratio;
-		mat4x4 m, p, mvp;
+		mat4x4 s, sh, t, r, p, ssh, ssht, sshtr, mvp;
 
 		ratio = bufferWidth / (float)bufferHeight;
 
 		glViewport(0, 0, bufferWidth, bufferHeight);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-
-		mat4x4_identity(m);
-
 		// scale the matrix
-		m[0][0] = m[0][0] * scaleTo[0];
-		m[1][1] = m[1][1] * scaleTo[1];
+		mat4x4_identity(s);
+		s[0][0] = s[0][0] * scaleTo[0];
+		s[1][1] = s[1][1] * scaleTo[1];
 		
 		// shear the matrix
-		m[0][1] = shearTo[0];
-		m[1][0] = shearTo[1];
+		mat4x4_identity(sh);
+		sh[0][1] = shearTo[0];
+		sh[1][0] = shearTo[1];
 		
 
 		// translate the matrix
-		mat4x4_translate(m, translationTo[0], translationTo[1], 0);
+		mat4x4_identity(t);
+		mat4x4_translate(t, translationTo[0], translationTo[1], 0);
 
 		// rotate the matrix
-		mat4x4_rotate_Z(m, m, rotationTo);
+		mat4x4_identity(r);
+		mat4x4_rotate_Z(r, r, rotationTo);
 
 
 		mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
-		mat4x4_mul(mvp, p, m);
+		mat4x4_mul(ssh, s, sh);
+		mat4x4_mul(ssht, ssh, t);
+		mat4x4_mul(sshtr, ssht, r);
 
 		
 		
