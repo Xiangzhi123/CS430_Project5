@@ -1,6 +1,6 @@
 #define GL_GLEXT_PROTOTYPES
 #define GLFW_INCLUDE_ES2 1
-#define GFLW_DLL 1
+#define GLFW_DLL 1
 
 #include <GLFW/glfw3.h>
 #include <GLES2/gl2.h>
