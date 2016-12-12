@@ -153,6 +153,7 @@ int PPMWrite(char *outPPMVersion, char *outputFilename) {
 	// call the PPMDataWrite function which writes the body data
 	PPMDataWrite(ppmVersionNum, fh);
 	fclose(fh);
+	return (0);
 }
 
 // this function writes the body data from buffer->data to output file
@@ -201,7 +202,7 @@ Vertex Vertexes[] = {
 };
 
 
-char* vertex_shader_src =
+static const char* vertex_shader_src =
 "uniform mat4 MVP;\n"
 "attribute vec2 vPos;\n"
 "attribute vec2 TexCoordIn;\n"
@@ -213,12 +214,12 @@ char* vertex_shader_src =
 "}";
 
 
-char* fragment_shader_src =
-"varying vec2 TexCoordOut;\n"
+static const char* fragment_shader_src =
+"varying lowp vec2 TexCoordOut;\n"
 "uniform sampler2D Texture;\n"
 "\n"
 "void main(void) {\n"
-"    gl_FragColor = texture2D(Texture, DestinationTexcoord);\n"
+"    gl_FragColor = texture2D(Texture, TexCoordOut);\n"
 "}";
 
 
@@ -227,9 +228,9 @@ static void error_callback(int error, const char* description) {
 }
 
 
-float scaleTo = { 1.0, 1.0 };
-float shearTo[] = { 0.0, 0.0 };
-float translationTo[] = { 0.0, 0.0 };
+float scaleTo[2] = { 1.0, 1.0 };
+float shearTo[2] = { 0.0, 0.0 };
+float translationTo[2] = { 0.0, 0.0 };
 float rotationTo = 0;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -302,11 +303,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		// rotation
 		// counterclockwise rotation
 		if (key == GLFW_KEY_C) {
-			RotationTo += 0.5;
+			rotationTo += 0.5;
 		}
 		// clockwise rotation
 		if (key == GLFW_KEY_Z) {
-			RotationTo -= 0.5;
+			rotationTo -= 0.5;
 		}
 
 
@@ -323,7 +324,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 		// close the window
 		if (key == GLFW_KEY_ESCAPE) {
-			glfwWindowShouldClose(window, 1);
+			glfwSetWindowShouldClose(window, 1);
 		}
 
 	}
@@ -443,15 +444,12 @@ int main(int argc, char *argv[]) {
 
 	GLuint texID;
 	PPMimage image = PPMRead(fileName);
-	width = image.width;
-	height = image.height;
-	data = image.data;
 	glGenTextures(1, &texID);
 	glBindTexture(GL_TEXTURE_2D, texID);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, widht, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.width, image.height, 0, GL_RGB, GL_UNSIGNED_BYTE, image.data);
 
 	
 
